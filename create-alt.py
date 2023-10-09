@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import os
+import uuid
+import requests
+
+# base url
+auvious_url = os.environ['AUVIOUS_URL']
+client_id = os.environ['CLIENT_ID']
+client_secret = os.environ['CLIENT_SECRET']
+application_id = os.environ['APPLICATION_ID']
+
+r = requests.post(
+    f"{auvious_url}/security/oauth/token",
+    params={
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': client_secret
+    }
+)
+
+access_token = r.json()['access_token']
+# print(access_token)
+
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': f'Bearer {access_token}'
+}
+
+r = requests.post(
+  f"{auvious_url}/security/genesys/room",
+  json={
+      'applicationId': application_id,
+      'cdestination': 'standalone',
+      'customerId': str(uuid.uuid4()),
+      'interactionId': str(uuid.uuid4()),
+      'ticketExpirationSeconds': 14400,
+      'urlBase': auvious_url
+  },
+  headers = headers
+)
+
+print(r.json())
+
+# print(f"Customer url: {auvious_url}/t/{ticket}")
+# print(f"Agent url: {auvious_url}/a?aid={application_id}&roomId={conference_id}")
