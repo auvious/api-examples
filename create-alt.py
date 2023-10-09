@@ -40,7 +40,5 @@ r = requests.post(
   headers = headers
 )
 
-print(r.json())
-
-# print(f"Customer url: {auvious_url}/t/{ticket}")
-# print(f"Agent url: {auvious_url}/a?aid={application_id}&roomId={conference_id}")
+print(f"Customer url: {r.json()['ticketUrl']}")
+print(f"Agent url: {r.json()['agentUrl']}")
