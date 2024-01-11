@@ -16,7 +16,8 @@ r = requests.post(
         'grant_type': 'client_credentials',
         'client_id': client_id,
         'client_secret': client_secret
-    }
+    },
+    timeout=5
 )
 
 access_token = r.json()['access_token']
@@ -37,7 +38,8 @@ r = requests.post(
       'ticketExpirationSeconds': 14400,
       'urlBase': auvious_url
   },
-  headers = headers
+  headers = headers,
+  timeout=5
 )
 
 print(f"Customer url: {r.json()['ticketUrl']}")
