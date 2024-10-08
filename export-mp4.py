@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+from http.client import HTTPException
 import os
 import uuid
-import requests
 import time
+import requests
 
 # base url
 auvious_url = os.environ["AUVIOUS_URL"]
@@ -11,25 +12,42 @@ client_id = os.environ["CLIENT_ID"]  # needs Supervisor role to run
 client_secret = os.environ["CLIENT_SECRET"]
 conversation_id = os.environ["CONVERSATION_ID"]
 
+# Define base headers with the User-Agent
+BASE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+}
+
 
 def get_access_token():
     """Get access token."""
+    url = f"{auvious_url}/security/oauth/token"
+    payload = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+
+    headers = BASE_HEADERS.copy()
+
     r = requests.post(
-        f"{auvious_url}/security/oauth/token",
-        params={
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-        },
+        url,
+        headers=headers,
+        data=payload,
         timeout=5,
     )
+
+    if r.status_code != 200:
+        raise HTTPException(
+            f"Failed to get access token: status = {r.status_code}, body = {r.text}"
+        )
 
     return r.json()["access_token"]
 
 
 def delete_mp4_if_exists(access_token):
     """Delete video composition if exists."""
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = BASE_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
 
     r = requests.get(
         f"{auvious_url}/composition/api/query/conversation/{conversation_id}",
@@ -63,10 +81,9 @@ def delete_mp4_if_exists(access_token):
 
 def create_video_composition(access_token):
     """Creates video composition."""
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {access_token}",
-    }
+    headers = BASE_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
+    headers["Content-Type"] = "application/json"
 
     r = requests.post(
         f"{auvious_url}/composition/api/request",
@@ -84,12 +101,18 @@ def create_video_composition(access_token):
         timeout=5,
     )
 
+    if r.status_code != 200:
+        raise HTTPException(
+            f"Failed to create video composition: status = {r.status_code}, body = {r.text}"
+        )
+
     return r.json()["id"]
 
 
 def wait_for_completion(access_token, composition_id):
     """Wait for composition to be completed."""
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = BASE_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
 
     r = requests.get(
         f"{auvious_url}/composition/api/query/conversation/{conversation_id}",
@@ -106,7 +129,7 @@ def wait_for_completion(access_token, composition_id):
 
     video_composition_state = video_composition.get("state")
 
-    if video_composition_state == "PROCESSING":
+    if video_composition_state == "PROCESSING" or video_composition_state == "QUEUED":
         print("Composition is still processing, waiting 5 seconds")
         time.sleep(5)
         wait_for_completion(access_token, composition_id)
@@ -116,7 +139,9 @@ def wait_for_completion(access_token, composition_id):
 
 def get_composition_signed_url(access_token, composition_id):
     """Get composition download(signed) url."""
-    headers = {"Authorization": f"Bearer {access_token}", "Referer": auvious_url}
+    headers = BASE_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
+    headers["Referer"] = auvious_url
 
     r = requests.get(
         f"{auvious_url}/composition/api/player/{conversation_id}/{composition_id}/url/attachment",
@@ -124,8 +149,10 @@ def get_composition_signed_url(access_token, composition_id):
         timeout=5,
     )
 
-    # print(f"status_code: {r.status_code}")
-    # print(f"response: {r.text}")
+    if r.status_code != 200:
+        raise HTTPException(
+            f"Failed to get composition signed url: status = {r.status_code}, body = {r.text}"
+        )
 
     return r.json()["url"]
 
@@ -138,7 +165,7 @@ def download_file(url, file_name):
         response.raise_for_status()  # Check if the download was successful
 
         # Open the file in binary write mode and save the content
-        with open(file_name, 'wb') as file:
+        with open(file_name, "wb") as file:
             file.write(response.content)
         print(f"Downloaded '{file_name}' from '{url}'")
     except requests.RequestException as e:
