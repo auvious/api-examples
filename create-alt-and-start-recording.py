@@ -9,7 +9,7 @@ import requests
 
 # base url
 auvious_url = os.environ["AUVIOUS_URL"]
-client_id = os.environ["CLIENT_ID"]
+client_id = os.environ["CLIENT_ID"] # Client needs Agent role in order for several requests to work
 client_secret = os.environ["CLIENT_SECRET"]
 application_id = os.environ["APPLICATION_ID"]
 
