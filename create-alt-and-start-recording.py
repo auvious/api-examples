@@ -9,7 +9,9 @@ import requests
 
 # base url
 auvious_url = os.environ["AUVIOUS_URL"]
-client_id = os.environ["CLIENT_ID"] # Client needs Agent role in order for several requests to work
+client_id = os.environ[
+    "CLIENT_ID"
+]  # Client needs Agent role in order for several requests to work
 client_secret = os.environ["CLIENT_SECRET"]
 application_id = os.environ["APPLICATION_ID"]
 
@@ -148,7 +150,7 @@ r = requests.post(
         "conferenceId": room_id,
         "operation": "SET",
         "key": "RECORDER",
-        "value": "{\"on\":true}",
+        "value": '{"on":true}',
         "userEndpointId": user_endpoint_id,
     },
     headers=headers,
@@ -157,3 +159,18 @@ r = requests.post(
 
 if r.status_code != 204:
     raise RuntimeError(f"Failed to set recording metadata: {r.text}")
+
+# finally leave the room
+r = requests.post(
+    f"{auvious_url}/rtc-api/conferences/leave",
+    json={
+        "conferenceId": room_id,
+        "userEndpointId": user_endpoint_id,
+        "reason": "my purpose is complete now",
+    },
+    headers=headers,
+    timeout=5,
+)
+
+if r.status_code != 204:
+    raise RuntimeError(f"Failed to leave room: {r.text}")
