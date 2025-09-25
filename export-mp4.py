@@ -14,7 +14,7 @@ conversation_id = os.environ["CONVERSATION_ID"]
 
 # Define base headers with the User-Agent
 BASE_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    "User-Agent": "Testing 1.0"
 }
 
 
@@ -42,6 +42,20 @@ def get_access_token():
         )
 
     return r.json()["access_token"]
+
+def check_recording(access_token):
+    """Check if the conversation is recorded."""
+    headers = BASE_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
+
+    r = requests.get(
+        f"{auvious_url}/composition/api/query/conversation/{conversation_id}",
+        headers=headers,
+        timeout=5,
+    )
+
+    if r.status_code != 200:
+        raise HTTPException(f"Failed to get conversation: status {r.status_code}, body = {r.text}")
 
 
 def delete_mp4_if_exists(access_token):
@@ -120,6 +134,9 @@ def wait_for_completion(access_token, composition_id):
         timeout=5,
     )
 
+    if r.status_code == 404:
+        raise HTTPException(f"Conversation {conversation_id} not found")
+
     response = r.json()
     compositions = response.get("compositions", [])
 
@@ -129,12 +146,14 @@ def wait_for_completion(access_token, composition_id):
 
     video_composition_state = video_composition.get("state")
 
-    if video_composition_state == "PROCESSING" or video_composition_state == "QUEUED":
+    if video_composition_state in ["PREPROCESSING", "PROCESSING", "QUEUED"]:
         print("Composition is still processing, waiting 5 seconds")
         time.sleep(5)
-        wait_for_completion(access_token, composition_id)
+        return wait_for_completion(access_token, composition_id)
     else:
         print(f"Composition state: {video_composition_state}")
+        if video_composition_state != "COMPLETED":
+            raise HTTPException(f"Composition failed with state: {video_composition_state}")
 
 
 def get_composition_signed_url(access_token, composition_id):
@@ -175,6 +194,8 @@ def download_file(url, file_name):
 def run():
     """Run the script."""
     access_token = get_access_token()
+
+    check_recording(access_token)
 
     delete_mp4_if_exists(access_token)
 
