@@ -29,6 +29,12 @@ This folder contains a collection and environment template to generate Auvious c
 - Genesys facade (one-call flow): Auth → Genesys: Create Room. This creates its own conference and ticket internally and returns both URLs. Do not call `Create Conference` before it; the facade does its own conference creation and is independent of any prior `conference_id`.
 - If you need extra customer tickets for a Genesys-created room, call `security/ticket` with the `conference_id` from the Genesys response; otherwise, keep flows separate.
 
+## Recording flow (API-driven)
+Use after you have a `conference_id` (standard or Genesys flow):
+- Auth → (Create Conference OR Genesys Room) → Register Endpoint → Join Conference → Start Recording → Set RECORDER metadata (optional UI indicator) → Leave Conference.
+- The recording call requires `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection will generate one before the recording call. The recorder response stores `recorder_id` and `recorder_instance_id` in the environment.
+- The Join/Leave/Metadata calls require a real `userEndpointId`; run Register Endpoint first.
+
 ## Notes
 - Keep credentials in your Postman environment only; do not commit secrets.
 - The collection expects client credentials with at least Agent role; Supervisor is required for recording/export scripts outside this flow.

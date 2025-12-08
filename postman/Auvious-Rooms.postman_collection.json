@@ -78,6 +78,311 @@
       ]
     },
     {
+      "name": "RTC: Register Endpoint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"keepAliveSeconds\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-api/users/endpoints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-api",
+            "users",
+            "endpoints"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Endpoint registered\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "const id = typeof res === 'string' ? res : res.id;",
+              "pm.environment.set(\"user_endpoint_id\", id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "RTC: Join Conference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"conferenceId\": \"{{conference_id}}\",\n  \"userEndpointId\": \"{{user_endpoint_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-api/conferences/join",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-api",
+            "conferences",
+            "join"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conference_id\")) {",
+              "  throw new Error(\"conference_id is empty. Run Create Conference first.\");",
+              "}",
+              "if (!pm.environment.get(\"user_endpoint_id\")) {",
+              "  throw new Error(\"user_endpoint_id is empty. Run Register Endpoint first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Joined conference\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recording: Start",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"conferenceId\": \"{{conference_id}}\",\n  \"conversationId\": \"{{interaction_id}}\",\n  \"audio\": true,\n  \"video\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/start",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "start"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"interaction_id\")) {",
+              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
+              "  pm.environment.set(\"interaction_id\", iid);",
+              "}",
+              "if (!pm.environment.get(\"conference_id\")) {",
+              "  throw new Error(\"conference_id is empty. Create Conference or Genesys Room first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording started\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "if (res.recorderId) pm.environment.set(\"recorder_id\", res.recorderId);",
+              "if (res.instanceId) pm.environment.set(\"recorder_instance_id\", res.instanceId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "RTC: Set RECORDER metadata",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"conferenceId\": \"{{conference_id}}\",\n  \"operation\": \"SET\",\n  \"key\": \"RECORDER\",\n  \"value\": \"{\\\"on\\\":true}\",\n  \"userEndpointId\": \"{{user_endpoint_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-api/conferences/updateMetadata",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-api",
+            "conferences",
+            "updateMetadata"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conference_id\")) {",
+              "  throw new Error(\"conference_id is empty. Create Conference or Genesys Room first.\");",
+              "}",
+              "if (!pm.environment.get(\"user_endpoint_id\")) {",
+              "  throw new Error(\"user_endpoint_id is empty. Run Register Endpoint and Join first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Metadata set\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "RTC: Leave Conference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"conferenceId\": \"{{conference_id}}\",\n  \"userEndpointId\": \"{{user_endpoint_id}}\",\n  \"reason\": \"completed via Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-api/conferences/leave",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-api",
+            "conferences",
+            "leave"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conference_id\")) {",
+              "  throw new Error(\"conference_id is empty. Create Conference or Genesys Room first.\");",
+              "}",
+              "if (!pm.environment.get(\"user_endpoint_id\")) {",
+              "  throw new Error(\"user_endpoint_id is empty. Run Register Endpoint and Join first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Left conference\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "RTC: Create Conference",
       "request": {
         "method": "POST",
@@ -93,7 +398,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"conferenceId\": \"{{$guid}}\",\n  \"interactionId\": \"{{$guid}}\",\n  \"metadata\": {\n    \"participant_limit\": \"8\"\n  },\n  \"mode\": \"ROUTER\"\n}",
+          "raw": "{\n  \"conferenceId\": \"{{$guid}}\",\n  \"interactionId\": \"{{interaction_id}}\",\n  \"metadata\": {\n    \"participant_limit\": \"8\"\n  },\n  \"mode\": \"ROUTER\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -114,6 +419,17 @@
       },
       "response": [],
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"interaction_id\")) {",
+              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
+              "  pm.environment.set(\"interaction_id\", iid);",
+              "}"
+            ]
+          }
+        },
         {
           "listen": "test",
           "script": {
@@ -215,7 +531,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"cdestination\": \"standalone\",\n  \"customerId\": \"{{$randomUUID}}\",\n  \"interactionId\": \"{{$randomUUID}}\",\n  \"ticketExpirationSeconds\": 14400,\n  \"urlBase\": \"{{base_url}}\"\n}",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"cdestination\": \"standalone\",\n  \"customerId\": \"{{$randomUUID}}\",\n  \"interactionId\": \"{{interaction_id}}\",\n  \"ticketExpirationSeconds\": 14400,\n  \"urlBase\": \"{{base_url}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -237,6 +553,17 @@
       "response": [],
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"interaction_id\")) {",
+              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
+              "  pm.environment.set(\"interaction_id\", iid);",
+              "}"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
@@ -245,7 +572,16 @@
               "});",
               "const res = pm.response.json();",
               "pm.environment.set(\"ticket_url_genesys\", res.ticketUrl);",
-              "pm.environment.set(\"agent_url_genesys\", res.agentUrl);"
+              "pm.environment.set(\"agent_url_genesys\", res.agentUrl);",
+              "try {",
+              "  const url = new URL(res.agentUrl);",
+              "  const roomId = url.searchParams.get(\"roomId\");",
+              "  if (roomId) {",
+              "    pm.environment.set(\"conference_id\", roomId);",
+              "  }",
+              "} catch (e) {",
+              "  // ignore parse errors",
+              "}"
             ]
           }
         }
