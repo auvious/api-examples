@@ -78,7 +78,7 @@
       ]
     },
     {
-      "name": "RTC: Create Conference",
+      "name": "Conference: Create Conference",
       "request": {
         "method": "POST",
         "header": [

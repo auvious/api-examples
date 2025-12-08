@@ -78,7 +78,7 @@
       ]
     },
     {
-      "name": "RTC: Create Conference (optional)",
+      "name": "Conference: Create Conference (optional)",
       "request": {
         "method": "POST",
         "header": [
@@ -141,7 +141,7 @@
       ]
     },
     {
-      "name": "RTC: Register Endpoint",
+      "name": "Conference: Register Endpoint",
       "request": {
         "method": "POST",
         "header": [
@@ -193,7 +193,7 @@
       ]
     },
     {
-      "name": "RTC: Join Conference",
+      "name": "Conference: Join Conference",
       "request": {
         "method": "POST",
         "header": [
@@ -322,7 +322,7 @@
       ]
     },
     {
-      "name": "RTC: Set RECORDER metadata (optional)",
+      "name": "Conference: Set RECORDER metadata (optional)",
       "request": {
         "method": "POST",
         "header": [
@@ -384,7 +384,7 @@
       ]
     },
     {
-      "name": "RTC: Leave Conference",
+      "name": "Conference: Leave Conference",
       "request": {
         "method": "POST",
         "header": [
