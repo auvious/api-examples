@@ -4,7 +4,7 @@ This folder contains a collection and environment template to generate Auvious c
 
 ## Files
 - `Auvious-Rooms.postman_collection.json` — room creation flows: OAuth, create conference, create ticket, plus a Genesys one-call flow.
-- `Auvious-Recording.postman_collection.json` — recording flows: OAuth, optional conference creation, register endpoint, join, start recording, set RECORDER metadata, leave.
+- `Auvious-Recording.postman_collection.json` — recording flow: OAuth + start recording for an existing conference.
 - `Auvious-generic.postman_environment.json` — placeholders for `base_url`, `client_id`, `client_secret`, `application_id`, and output variables (`customer_url`, `agent_url`, etc.). Secrets are not committed.
 
 ## How to Use
@@ -15,7 +15,7 @@ This folder contains a collection and environment template to generate Auvious c
    - `application_id` (e.g., your Auvious app ID)
 3) Collections use Bearer auth at the collection level with `{{access_token}}`.
    - Rooms collection order: **Auth → Create Conference → Create Ticket**. Optional: **Genesys: Create Room** (one-call, independent of the standard flow).
-   - Recording collection order: **Auth → (optional) Create Conference → Register Endpoint → Join Conference → Start Recording → (optional) Set RECORDER metadata → Leave Conference**. Requires `conference_id` (from Rooms or the optional create step) and `interaction_id` (auto-generated if blank).
+   - Recording collection order: **Auth → Start Recording**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Recorder response stores `recorder_id` and `recorder_instance_id`.
 4) After the Rooms ticket call, read the environment variables `customer_url` and `agent_url` for ready-to-use links.
 
 ## Hosted URLs (what to share)
@@ -26,13 +26,12 @@ This folder contains a collection and environment template to generate Auvious c
 ## Which flow to use (and in what order)
 - Rooms, standard: Auth → Create Conference → Create Ticket. The ticket is bound to that `conference_id`.
 - Rooms, Genesys facade: Auth → Genesys: Create Room. This creates its own conference and ticket. Do not precede it with Create Conference; they are independent. If you need extra tickets for a Genesys-created room, call `security/ticket` with that `conference_id`.
-- Recording: Use the Recording collection. You can supply `conference_id` from the Rooms flow or run its optional Create Conference step; then register endpoint → join → start recording.
+- Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording.
 
 ## Recording flow (API-driven)
 Recording collection sequence:
-- Auth → (optional) Create Conference → Register Endpoint → Join Conference → Start Recording → (optional) Set RECORDER metadata → Leave Conference.
+- Auth → Start Recording.
 - Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Recorder response stores `recorder_id` and `recorder_instance_id`.
-- Join/Leave/Metadata require a real `userEndpointId`; run Register Endpoint first.
 
 ## Notes
 - Keep credentials in your Postman environment only; do not commit secrets.
