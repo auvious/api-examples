@@ -138,7 +138,8 @@
               "});",
               "const res = pm.response.json();",
               "if (res.recorderId) pm.environment.set(\"recorder_id\", res.recorderId);",
-              "if (res.instanceId) pm.environment.set(\"recorder_instance_id\", res.instanceId);"
+              "if (res.instanceId) pm.environment.set(\"recorder_instance_id\", res.instanceId);",
+              "if (res.conversationId) pm.environment.set(\"conversation_id\", res.conversationId);"
             ]
           }
         }
@@ -168,7 +169,7 @@
           }
         },
         "url": {
-          "raw": "{{base_url}}/rtc-recorder/api/recordings/stop",
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/{{conversation_id}}/{{recorder_id}}/{{recorder_instance_id}}/stop",
           "host": [
             "{{base_url}}"
           ],
@@ -176,6 +177,9 @@
             "rtc-recorder",
             "api",
             "recordings",
+            "{{conversation_id}}",
+            "{{recorder_id}}",
+            "{{recorder_instance_id}}",
             "stop"
           ]
         }
