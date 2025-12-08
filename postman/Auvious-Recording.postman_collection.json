@@ -143,6 +143,69 @@
           }
         }
       ]
+    },
+    {
+      "name": "Recording: Stop",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"recorderId\": \"{{recorder_id}}\",\n  \"instanceId\": \"{{recorder_instance_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/stop",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "stop"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"recorder_id\")) {",
+              "  throw new Error(\"recorder_id is empty. Run Recording: Start first.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_instance_id\")) {",
+              "  throw new Error(\"recorder_instance_id is empty. Run Recording: Start first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording stopped\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

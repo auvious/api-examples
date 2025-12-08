@@ -15,7 +15,7 @@ This folder contains a collection and environment template to generate Auvious c
    - `application_id` (e.g., your Auvious app ID)
 3) Collections use Bearer auth at the collection level with `{{access_token}}`.
    - Rooms collection order: **Auth → Create Conference → Create Ticket**. Optional: **Genesys: Create Room** (one-call, independent of the standard flow).
-   - Recording collection order: **Auth → Start Recording**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Recorder response stores `recorder_id` and `recorder_instance_id`.
+   - Recording collection order: **Auth → Start Recording → Stop Recording**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Start stores `recorder_id` and `recorder_instance_id` used by Stop.
 4) After the Rooms ticket call, read the environment variables `customer_url` and `agent_url` for ready-to-use links.
 
 ## Hosted URLs (what to share)
@@ -26,12 +26,12 @@ This folder contains a collection and environment template to generate Auvious c
 ## Which flow to use (and in what order)
 - Rooms, standard: Auth → Create Conference → Create Ticket. The ticket is bound to that `conference_id`.
 - Rooms, Genesys facade: Auth → Genesys: Create Room. This creates its own conference and ticket. Do not precede it with Create Conference; they are independent. If you need extra tickets for a Genesys-created room, call `security/ticket` with that `conference_id`.
-- Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording.
+- Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording → Stop Recording.
 
 ## Recording flow (API-driven)
 Recording collection sequence:
-- Auth → Start Recording.
-- Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Recorder response stores `recorder_id` and `recorder_instance_id`.
+- Auth → Start Recording → Stop Recording.
+- Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Start stores `recorder_id` and `recorder_instance_id` used by Stop.
 
 ## Notes
 - Keep credentials in your Postman environment only; do not commit secrets.
