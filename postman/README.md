@@ -16,7 +16,7 @@ This folder contains a collection and environment template to generate Auvious c
    - `application_id` (e.g., your Auvious app ID)
 3) Collections use Bearer auth at the collection level with `{{access_token}}`.
    - Rooms collection order: **Auth → Create Conference → Create Ticket**. Optional: **Genesys: Create Room** (one-call, independent of the standard flow).
-   - Recording collection order: **Auth → Start Recording → Stop Recording → Recording Status**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Start stores `recorder_id` and `recorder_instance_id` used by Stop/Status.
+   - Recording collection order: **Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Start stores `recorder_id` and `recorder_instance_id` used by subsequent calls; state is stored as `recorder_state`.
    - Compositions collection order: **Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL**. Requires `conversation_id` (set from your call recording/interaction). Request stores `composition_id`; signed URL stored as `composition_signed_url`.
 4) After the Rooms ticket call, read the environment variables `customer_url` and `agent_url` for ready-to-use links.
 
@@ -28,13 +28,13 @@ This folder contains a collection and environment template to generate Auvious c
 ## Which flow to use (and in what order)
 - Rooms, standard: Auth → Create Conference → Create Ticket. The ticket is bound to that `conference_id`.
 - Rooms, Genesys facade: Auth → Genesys: Create Room. This creates its own conference and ticket. Do not precede it with Create Conference; they are independent. If you need extra tickets for a Genesys-created room, call `security/ticket` with that `conference_id`.
-- Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording → Stop Recording → Recording Status.
+- Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
 - Compositions: Use the Compositions collection. Supply `conversation_id` from the recorded call, then Auth → Request Video → Query → Get Signed URL.
 
 ## Recording flow (API-driven)
 Recording collection sequence:
-- Auth → Start Recording → Stop Recording → Recording Status.
-- Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Start stores `recorder_id` and `recorder_instance_id` used by Stop/Status.
+- Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
+- Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Start stores `recorder_id` and `recorder_instance_id` used by subsequent calls; state stored as `recorder_state`.
 
 Compositions collection sequence:
 - Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL.
