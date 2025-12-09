@@ -1,0 +1,265 @@
+{
+  "info": {
+    "_postman_id": "f7c0bba7-845c-4ac3-9f7a-3c9d6d2f9e5a",
+    "name": "Auvious Room URLs",
+    "description": "Generate customer/agent room URLs for an Auvious application using client-credential OAuth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth: Get Access Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/security/oauth/token",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "security",
+            "oauth",
+            "token"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is OK\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const jsonData = pm.response.json();",
+              "pm.environment.set(\"access_token\", jsonData.access_token);",
+              "if (jsonData.expires_in) {",
+              "  pm.environment.set(\"token_expires_in\", jsonData.expires_in);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Conference: Create Conference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-api/conferences/create",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-api",
+            "conferences",
+            "create"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Conference created\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "const confId = res.id || res.conferenceId;",
+              "pm.environment.set(\"conference_id\", confId);",
+              "const baseUrl = pm.environment.get(\"base_url\");",
+              "const appId = pm.environment.get(\"application_id\");",
+              "pm.environment.set(\"agent_url\", `${baseUrl}/a?aid=${appId}&roomId=${confId}`);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security: Create Ticket (MULTI_USE_TICKET)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"MULTI_USE_TICKET\",\n  \"ttl\": 14400,\n  \"length\": 6,\n  \"properties\": {\n    \"applicationId\": \"{{application_id}}\",\n    \"conference_id\": \"{{conference_id}}\",\n    \"customer_id\": \"{{$randomUUID}}\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/security/ticket",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "security",
+            "ticket"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const confId = pm.environment.get(\"conference_id\");",
+              "if (!confId) {",
+              "  throw new Error(\"conference_id is empty. Run 'RTC: Create Conference' first so ticket binds to the same room.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Ticket created\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "pm.environment.set(\"ticket_id\", res.id);",
+              "const baseUrl = pm.environment.get(\"base_url\");",
+              "const appId = pm.environment.get(\"application_id\");",
+              "const confId = pm.environment.get(\"conference_id\");",
+              "const ticketId = res.id;",
+              "pm.environment.set(\"customer_url\", `${baseUrl}/t/${ticketId}`);",
+              "pm.environment.set(\"agent_url\", `${baseUrl}/a?aid=${appId}&roomId=${confId}`);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "One-call: Create Room (ticket & agent URLs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"cdestination\": \"standalone\",\n  \"customerId\": \"{{$randomUUID}}\",\n  \"ticketExpirationSeconds\": 14400,\n  \"urlBase\": \"{{base_url}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/security/genesys/room",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "security",
+            "genesys",
+            "room"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"One-call room created\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "pm.environment.set(\"ticket_url_genesys\", res.ticketUrl);",
+              "pm.environment.set(\"agent_url_genesys\", res.agentUrl);",
+              "try {",
+              "  const url = new URL(res.agentUrl);",
+              "  const roomId = url.searchParams.get(\"roomId\");",
+              "  if (roomId) {",
+              "    pm.environment.set(\"conference_id\", roomId);",
+              "  }",
+              "} catch (e) {",
+              "  // ignore parse errors",
+              "}"
+            ]
+          }
+        }
+      ],
+      "description": "One-call flow; returns ticketUrl (customer) and agentUrl."
+    }
+  ]
+}

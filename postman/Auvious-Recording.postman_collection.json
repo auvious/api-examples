@@ -1,0 +1,325 @@
+{
+  "info": {
+    "_postman_id": "22bfb061-3b45-4af0-91b1-6e9f6b9b1a0e",
+    "name": "Auvious Recording",
+    "description": "API steps to start recording for an existing conference. Supply conference_id from the Rooms collection (or create one separately).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth: Get Access Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/security/oauth/token",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "security",
+            "oauth",
+            "token"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is OK\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const jsonData = pm.response.json();",
+              "pm.environment.set(\"access_token\", jsonData.access_token);",
+              "if (jsonData.expires_in) {",
+              "  pm.environment.set(\"token_expires_in\", jsonData.expires_in);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recording: Start",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"conferenceId\": \"{{conference_id}}\",\n  \"conversationId\": \"{{conference_id}}\",\n  \"audio\": true,\n  \"video\": true,\n  \"screen\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/start",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "start"
+          ]
+        }
+      },
+      "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "exec": [
+              "const confId = pm.environment.get(\"conference_id\");",
+              "if (!confId) {",
+              "  throw new Error(\"conference_id is empty. Use Rooms collection or set it before starting recording.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording started\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "if (res.recorderId) pm.environment.set(\"recorder_id\", res.recorderId);",
+              "if (res.instanceId) pm.environment.set(\"recorder_instance_id\", res.instanceId);",
+              "if (res.conversationId) pm.environment.set(\"conversation_id\", res.conversationId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recording: Stop",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"recorderId\": \"{{recorder_id}}\",\n  \"instanceId\": \"{{recorder_instance_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/{{conversation_id}}/{{recorder_id}}/{{recorder_instance_id}}/stop",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "{{conversation_id}}",
+            "{{recorder_id}}",
+            "{{recorder_instance_id}}",
+            "stop"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"recorder_id\")) {",
+              "  throw new Error(\"recorder_id is empty. Run Recording: Start first.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_instance_id\")) {",
+              "  throw new Error(\"recorder_instance_id is empty. Run Recording: Start first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording stopped\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recording: Get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/{{conversation_id}}/{{recorder_id}}/{{recorder_instance_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "{{conversation_id}}",
+            "{{recorder_id}}",
+            "{{recorder_instance_id}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it to the recorded conversation.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_id\")) {",
+              "  throw new Error(\"recorder_id is empty. Run Recording: Start first.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_instance_id\")) {",
+              "  throw new Error(\"recorder_instance_id is empty. Run Recording: Start first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording fetched\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recording: Get State",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/rtc-recorder/api/recordings/{{conversation_id}}/{{recorder_id}}/{{recorder_instance_id}}/state",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rtc-recorder",
+            "api",
+            "recordings",
+            "{{conversation_id}}",
+            "{{recorder_id}}",
+            "{{recorder_instance_id}}",
+            "state"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it to the recorded conversation.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_id\")) {",
+              "  throw new Error(\"recorder_id is empty. Run Recording: Start first.\");",
+              "}",
+              "if (!pm.environment.get(\"recorder_instance_id\")) {",
+              "  throw new Error(\"recorder_instance_id is empty. Run Recording: Start first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Recording state fetched\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+              "});",
+              "const res = pm.response.json();",
+              "if (res.state) pm.environment.set(\"recorder_state\", res.state);"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

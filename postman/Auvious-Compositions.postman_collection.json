@@ -1,0 +1,313 @@
+{
+  "info": {
+    "_postman_id": "6c8f1e7c-7f19-4b45-8d54-4f1c1d4c8a0b",
+    "name": "Auvious Compositions",
+    "description": "Create and retrieve video compositions (MP4) for a conversation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth: Get Access Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/security/oauth/token",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "security",
+            "oauth",
+            "token"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is OK\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const jsonData = pm.response.json();",
+              "pm.environment.set(\"access_token\", jsonData.access_token);",
+              "if (jsonData.expires_in) {",
+              "  pm.environment.set(\"token_expires_in\", jsonData.expires_in);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Composition: Request Video",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"export-{{$guid}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"audioFormat\": \"mp3\",\n  \"videoFormat\": \"mp4\",\n  \"type\": \"video\",\n  \"resolution\": \"320x240\",\n  \"layout\": \"GRID\",\n  \"priority\": \"1\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/composition/api/request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "composition",
+            "api",
+            "request"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it from an existing conversation before requesting a composition.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Composition requested\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "const res = pm.response.json();",
+              "if (res.id) pm.environment.set(\"composition_id\", res.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Composition: Query Conversation",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/composition/api/query/conversation/{{conversation_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "composition",
+            "api",
+            "query",
+            "conversation",
+            "{{conversation_id}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it before querying compositions.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Conversation queried\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+              "});",
+              "const res = pm.response.json();",
+              "const comps = res.compositions || [];",
+              "const desiredId = pm.environment.get(\"composition_id\");",
+              "let match = null;",
+              "if (desiredId) {",
+              "  match = comps.find(c => c.id === desiredId) || null;",
+              "} else {",
+              "  match = comps.length ? comps[0] : null;",
+              "}",
+              "if (match) {",
+              "  pm.environment.set(\"composition_id\", match.id);",
+              "  if (match.state) pm.environment.set(\"composition_state\", match.state);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Composition: Get Signed URL",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Referer",
+            "value": "{{base_url}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/composition/api/player/{{conversation_id}}/{{composition_id}}/url/attachment",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "composition",
+            "api",
+            "player",
+            "{{conversation_id}}",
+            "{{composition_id}}",
+            "url",
+            "attachment"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it before fetching a signed URL.\");",
+              "}",
+              "if (!pm.environment.get(\"composition_id\")) {",
+              "  throw new Error(\"composition_id is empty. Request a composition or query first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Signed URL fetched\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+              "});",
+              "const res = pm.response.json();",
+              "if (res.url) pm.environment.set(\"composition_signed_url\", res.url);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Composition: Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/composition/api/{{conversation_id}}/{{composition_id}}/delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "composition",
+            "api",
+            "{{conversation_id}}",
+            "{{composition_id}}",
+            "delete"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it before deleting a composition.\");",
+              "}",
+              "if (!pm.environment.get(\"composition_id\")) {",
+              "  throw new Error(\"composition_id is empty. Request or query a composition first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Composition deleted\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
