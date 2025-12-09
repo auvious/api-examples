@@ -35,7 +35,7 @@ This folder contains a collection and environment template to generate Auvious c
 ## Recording flow (API-driven)
 Recording collection sequence:
 - Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
-- Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state stored as `recorder_state`.
+- Needs `application_id` and `conference_id`. If `interaction_id` is empty, the collection uses `conference_id` as the authoritative conversationId (not a random GUID). Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state stored as `recorder_state`.
 
 Compositions collection sequence:
 - Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL → Composition: Delete.

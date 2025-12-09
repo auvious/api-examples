@@ -114,17 +114,18 @@
         }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "if (!pm.environment.get(\"interaction_id\")) {",
-              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
-              "  pm.environment.set(\"interaction_id\", iid);",
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "exec": [
+              "const confId = pm.environment.get(\"conference_id\");",
+              "if (!confId) {",
+              "  throw new Error(\"conference_id is empty. Use Rooms collection or set it before starting recording.\");",
               "}",
-              "if (!pm.environment.get(\"conference_id\")) {",
-              "  throw new Error(\"conference_id is empty. Use Rooms collection or run Create Conference here.\");",
+              "if (!pm.environment.get(\"interaction_id\")) {",
+              "  // Use conference_id as authoritative conversationId when none is provided",
+              "  pm.environment.set(\"interaction_id\", confId);",
               "}"
             ]
           }
