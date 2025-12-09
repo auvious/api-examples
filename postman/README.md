@@ -18,7 +18,7 @@ This folder contains a collection and environment template to generate Auvious c
    - Rooms collection order: **Auth → Create Conference → Create Ticket**.
    - Optional room flow: **One-call: Create Room** (independent of the standard flow).
    - Recording collection order: **Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state is stored as `recorder_state`.
-   - Compositions collection order: **Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL**. Requires `conversation_id` (set from your call recording/interaction). Request stores `composition_id`; signed URL stored as `composition_signed_url`.
+   - Compositions collection order: **Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL → Composition: Delete**. Requires `conversation_id` (set from your call recording/interaction). Request stores `composition_id`; signed URL stored as `composition_signed_url`. Delete requires Supervisor role and a deletable state.
 4) After the Rooms ticket call, read the environment variables `customer_url` and `agent_url` for ready-to-use links.
 
 ## Hosted URLs (what to share)
@@ -30,7 +30,7 @@ This folder contains a collection and environment template to generate Auvious c
 - Rooms, standard: Auth → Create Conference → Create Ticket. The ticket is bound to that `conference_id`.
 - Rooms, one-call facade: Auth → One-call: Create Room. This creates its own conference and ticket. Do not precede it with Create Conference; they are independent. If you need extra tickets for a one-call room, call `security/ticket` with that `conference_id`.
 - Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
-- Compositions: Use the Compositions collection. Supply `conversation_id` from the recorded call, then Auth → Request Video → Query → Get Signed URL.
+- Compositions: Use the Compositions collection only after a recording exists for the conversation (call recorded and stopped, with uploads completed). Supply `conversation_id` from that recording, then Auth → Request Video → Query → Get Signed URL → (optional) Delete.
 
 ## Recording flow (API-driven)
 Recording collection sequence:
@@ -38,8 +38,8 @@ Recording collection sequence:
 - Needs `application_id`, `conference_id`, and `interaction_id`. If `interaction_id` is empty, the collection generates one before starting recording. Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state stored as `recorder_state`.
 
 Compositions collection sequence:
-- Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL.
-- Needs `conversation_id`. Request stores `composition_id`; Query can refresh `composition_state`; Get Signed URL stores `composition_signed_url`.
+- Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL → Composition: Delete.
+- Needs `conversation_id` from a recorded conversation (after stop and upload). Compositions and recordings are asynchronous; poll query/state until the expected state before moving to the next step. Request stores `composition_id`; Query can refresh `composition_state`; Get Signed URL stores `composition_signed_url`; Delete removes the composition (requires allowed state and Supervisor role).
 
 ## Notes
 - Keep credentials in your Postman environment only; do not commit secrets.

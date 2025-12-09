@@ -257,6 +257,57 @@
           }
         }
       ]
+    },
+    {
+      "name": "Composition: Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/composition/api/{{conversation_id}}/{{composition_id}}/delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "composition",
+            "api",
+            "{{conversation_id}}",
+            "{{composition_id}}",
+            "delete"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"conversation_id\")) {",
+              "  throw new Error(\"conversation_id is empty. Set it before deleting a composition.\");",
+              "}",
+              "if (!pm.environment.get(\"composition_id\")) {",
+              "  throw new Error(\"composition_id is empty. Request or query a composition first.\");",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Composition deleted\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ]
 }
