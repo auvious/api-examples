@@ -93,7 +93,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"conferenceId\": \"{{$guid}}\",\n  \"interactionId\": \"{{interaction_id}}\",\n  \"metadata\": {\n    \"participant_limit\": \"8\"\n  },\n  \"mode\": \"ROUTER\"\n}",
+          "raw": "{\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -114,17 +114,6 @@
       },
       "response": [],
       "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "if (!pm.environment.get(\"interaction_id\")) {",
-              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
-              "  pm.environment.set(\"interaction_id\", iid);",
-              "}"
-            ]
-          }
-        },
         {
           "listen": "test",
           "script": {
@@ -226,7 +215,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"cdestination\": \"standalone\",\n  \"customerId\": \"{{$randomUUID}}\",\n  \"interactionId\": \"{{interaction_id}}\",\n  \"ticketExpirationSeconds\": 14400,\n  \"urlBase\": \"{{base_url}}\"\n}",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"cdestination\": \"standalone\",\n  \"customerId\": \"{{$randomUUID}}\",\n  \"ticketExpirationSeconds\": 14400,\n  \"urlBase\": \"{{base_url}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -247,17 +236,6 @@
       },
       "response": [],
       "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "if (!pm.environment.get(\"interaction_id\")) {",
-              "  const iid = pm.variables.replaceIn(\"{{$guid}}\");",
-              "  pm.environment.set(\"interaction_id\", iid);",
-              "}"
-            ]
-          }
-        },
         {
           "listen": "test",
           "script": {
