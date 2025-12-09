@@ -211,7 +211,7 @@
       ]
     },
     {
-      "name": "Genesys: Create Room (ticket & agent URLs)",
+      "name": "One-call: Create Room (ticket & agent URLs)",
       "request": {
         "method": "POST",
         "header": [
@@ -262,7 +262,7 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Genesys room created\", function () {",
+              "pm.test(\"One-call room created\", function () {",
               "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
               "});",
               "const res = pm.response.json();",
@@ -281,7 +281,7 @@
           }
         }
       ],
-      "description": "One-call Genesys flow; returns ticketUrl (customer) and agentUrl."
+      "description": "One-call flow; returns ticketUrl (customer) and agentUrl."
     }
   ]
 }
