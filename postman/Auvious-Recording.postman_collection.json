@@ -93,7 +93,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"conferenceId\": \"{{conference_id}}\",\n  \"conversationId\": \"{{interaction_id}}\",\n  \"audio\": true,\n  \"video\": true\n}",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"conferenceId\": \"{{conference_id}}\",\n  \"conversationId\": \"{{conference_id}}\",\n  \"audio\": true,\n  \"video\": true,\n  \"screen\": true\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -122,10 +122,6 @@
               "const confId = pm.environment.get(\"conference_id\");",
               "if (!confId) {",
               "  throw new Error(\"conference_id is empty. Use Rooms collection or set it before starting recording.\");",
-              "}",
-              "if (!pm.environment.get(\"interaction_id\")) {",
-              "  // Use conference_id as authoritative conversationId when none is provided",
-              "  pm.environment.set(\"interaction_id\", confId);",
               "}"
             ]
           }

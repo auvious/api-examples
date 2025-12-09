@@ -17,7 +17,7 @@ This folder contains a collection and environment template to generate Auvious c
 3) Collections use Bearer auth at the collection level with `{{access_token}}`.
    - Rooms collection order: **Auth → Create Conference → Create Ticket**.
    - Optional room flow: **One-call: Create Room** (independent of the standard flow).
-   - Recording collection order: **Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State**. Requires `conference_id` (from Rooms or elsewhere) and `interaction_id` (auto-generated if blank). Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state is stored as `recorder_state`.
+   - Recording collection order: **Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State**. Requires `conference_id` (from Rooms or elsewhere). Start uses `conference_id` as `conversationId` and stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state is stored as `recorder_state`.
    - Compositions collection order: **Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL → Composition: Delete**. Requires `conversation_id` (set from your call recording/interaction). Request stores `composition_id`; signed URL stored as `composition_signed_url`. Delete requires Supervisor role and a deletable state.
 4) After the Rooms ticket call, read the environment variables `customer_url` and `agent_url` for ready-to-use links.
 
@@ -32,10 +32,24 @@ This folder contains a collection and environment template to generate Auvious c
 - Recording: Use the Recording collection. Supply `conference_id` from the Rooms flow (or your own conference). Then Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
 - Compositions: Use the Compositions collection only after a recording exists for the conversation (call recorded and stopped, with uploads completed). Supply `conversation_id` from that recording, then Auth → Request Video → Query → Get Signed URL → (optional) Delete.
 
+## Recorder media options (audio/video/screen)
+- Purpose: flags tell the recorder which lanes to capture so clients/admins can align behavior with policy and bandwidth needs.
+- Usage: send booleans for `audio`, `video`, and `screen` on Start Recording. Admins set defaults; clients can override per call.
+- Options:
+  - `audio`: capture mic
+  - `video`: capture camera
+  - `screen`: capture screenshare (independent, see defaults)
+- Defaults/behavior:
+  - If `screen` is omitted, it mirrors `video` (video on → screen on; video off → screen off).
+  - Screenshare only: `audio` as needed, `video=false`, `screen=true`.
+  - Video only: `video=true`, `screen=false`.
+  - Both: set `video=true`, `screen=true`.
+  - Audio-only: `audio=true`, `video=false`, `screen=false`.
+
 ## Recording flow (API-driven)
 Recording collection sequence:
 - Auth → Start Recording → Stop Recording → Recording: Get → Recording: Get State.
-- Needs `application_id` and `conference_id`. If `interaction_id` is empty, the collection uses `conference_id` as the authoritative conversationId (not a random GUID). Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state stored as `recorder_state`.
+- Needs `application_id` and `conference_id`. Start uses `conference_id` as `conversationId` (no interactionId auto-generation). Start stores `recorder_id`, `recorder_instance_id`, and `conversation_id` used by subsequent calls; state stored as `recorder_state`.
 
 Compositions collection sequence:
 - Auth → Composition: Request Video → Composition: Query Conversation → Composition: Get Signed URL → Composition: Delete.
